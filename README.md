@@ -1,11 +1,11 @@
-﻿# open-guide-maps
+# map-creator
 
-open-guide-maps 是一个给 Codex / agent 使用的城市导览地图工具包。它可以把城市、地点名或已有 POI JSON 转成可复查的 POI 数据，再用 OpenStreetMap / OSMnx 渲染 GIS 地图草稿，并可选用 GPT Image 做风格化海报。
+map-creator 是一个给 Codex / agent 使用的城市导览地图工具包。它可以把城市、地点名或已有 POI JSON 转成可复查的 POI 数据，再用 OpenStreetMap / OSMnx 渲染 GIS 地图草稿，并可选用 GPT Image 做风格化海报。
 
 ## 项目结构
 
 ```text
-open-guide-maps/
+map-creator/
 |-- README.md                         # 项目说明
 |-- SKILL.md                          # 给 Codex/agent 使用的操作说明
 |-- config.example.json               # 配置模板，不放真实 key
@@ -83,6 +83,8 @@ CLI 入口内部也会尽量把 stdout/stderr 设为 UTF-8。
 $env:AMAP_KEY="你的高德 key"
 $env:OPENAI_API_KEY="你的 OpenAI key"
 ```
+
+运行目录可以用 `MAP_CREATOR_CACHE_DIR`、`MAP_CREATOR_OUTPUTS_DIR`、`MAP_CREATOR_POSTERS_DIR`、`MAP_CREATOR_STYLIZED_DIR`、`MAP_CREATOR_POI_SETS_DIR` 覆盖；旧的 `OPEN_GUIDE_MAPS_*` 变量仍然兼容。
 
 `config.local.json` 已被 `.gitignore` 忽略，不要提交真实 key。`config.example.json` 只保留字段结构。
 

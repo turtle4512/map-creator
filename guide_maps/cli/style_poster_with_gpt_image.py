@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Style an open-guide-maps draft with GPT Image."""
+"""Style a map-creator draft with GPT Image."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from guide_maps.styling.gpt_image import GPTImageError, style_poster
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Style an open-guide-maps draft with GPT Image.")
+    parser = argparse.ArgumentParser(description="Style a map-creator draft with GPT Image.")
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--vars", type=Path)
     parser.add_argument("--template", type=Path)

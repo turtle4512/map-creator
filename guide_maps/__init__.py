@@ -1,1 +1,1 @@
-﻿"""open-guide-maps package."""
+"""map-creator package."""

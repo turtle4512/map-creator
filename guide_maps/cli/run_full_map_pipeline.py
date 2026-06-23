@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run an open-guide-maps draft script, then optionally style the result."""
+"""Run a map-creator draft script, then optionally style the result."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from guide_maps.styling.gpt_image import GPTImageError, style_poster
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run an open-guide-maps pipeline.")
+    parser = argparse.ArgumentParser(description="Run a map-creator pipeline.")
     parser.add_argument("--map-script", required=True, type=Path)
     parser.add_argument("--vars", type=Path)
     parser.add_argument("--template", type=Path)
