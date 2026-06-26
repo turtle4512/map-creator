@@ -14,7 +14,7 @@ from guide_maps.geocoding.amap_cli_client import AMapCLIClientError
 from guide_maps.geocoding.amap_client import AMapClientError
 from guide_maps.geocoding.poi_io import load_poi_set, save_poi_set, slug
 from guide_maps.geocoding.schemas import ResolvedPOI
-from guide_maps.geocoding.workflow import read_place_names, resolve_to_poi_set
+from guide_maps.geocoding.workflow import read_place_names, resolve_category_to_poi_set, resolve_to_poi_set
 from guide_maps.rendering.osm_context_map_template import ContextMapSpec, ContextSpot, render_context_map
 
 
@@ -26,6 +26,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--city", required=True)
     parser.add_argument("--places", nargs="*")
     parser.add_argument("--places-file", type=Path)
+    parser.add_argument("--category", help="category keyword (咖啡店/酒馆/书店…) -> top-N real POIs (#1240 B-mode)")
+    parser.add_argument("--top-n", type=int, default=8, help="max POIs in category mode (clamped to 1..10)")
     parser.add_argument("--title")
     parser.add_argument("--subtitle", default="")
     parser.add_argument("--output")
@@ -46,9 +48,13 @@ def main() -> int:
     places = read_places(args)
     if args.poi_json:
         poi_set = load_poi_set(args.poi_json)
+    elif args.category:
+        poi_set = resolve_category(args)
+        output = save_poi_set(poi_set, args.save_poi_json)
+        print(f"[OK] Wrote POI JSON: {output}")
     else:
         if not places:
-            raise SystemExit("Provide --places, --places-file, or --poi-json.")
+            raise SystemExit("Provide --places, --places-file, --category, or --poi-json.")
         poi_set = resolve_places(args, places)
         output = save_poi_set(poi_set, args.save_poi_json)
         print(f"[OK] Wrote POI JSON: {output}")
@@ -90,6 +96,20 @@ def resolve_places(args: argparse.Namespace, places: list[str]):
             theme=args.theme,
             source=args.source,
             candidate_limit=args.candidate_limit,
+        )
+    except (AMapCLIClientError, AMapClientError) as exc:
+        raise SystemExit(str(exc)) from exc
+
+
+def resolve_category(args: argparse.Namespace):
+    top_n = min(max(args.top_n, 1), 10)  # PM #1240 constraint: cap at 10
+    try:
+        return resolve_category_to_poi_set(
+            city=args.city,
+            category=args.category,
+            theme=args.theme,
+            source=args.source,
+            top_n=top_n,
         )
     except (AMapCLIClientError, AMapClientError) as exc:
         raise SystemExit(str(exc)) from exc

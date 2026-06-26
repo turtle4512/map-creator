@@ -62,3 +62,18 @@ def resolve_to_poi_set(
     print(f"Resolving {len(names)} POIs in {city} via {source_name}...")
     pois = resolver.resolve_many(names, city=city, limit=candidate_limit)
     return POISet(city, theme, source_name, COORDINATE_POLICY, pois)
+
+
+def resolve_category_to_poi_set(
+    *,
+    city: str,
+    category: str,
+    theme: str = "guide",
+    source: str = "auto",
+    top_n: int = 8,
+) -> POISet:
+    resolver, source_name = build_resolver(source, category, city)
+    print(f"Searching category {category!r} in {city} via {source_name}...")
+    pois = resolver.resolve_category(category, city=city, top_n=top_n)
+    print(f"[OK] {len(pois)} POIs kept after urban-core filter (top_n={top_n})")
+    return POISet(city, theme, source_name, COORDINATE_POLICY, pois)

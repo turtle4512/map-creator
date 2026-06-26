@@ -16,6 +16,39 @@ class POIResolver:
     def resolve_many(self, names: list[str], city: str, limit: int = 5) -> list[ResolvedPOI]:
         return [self.resolve_one(name, city=city, limit=limit) for name in names]
 
+    def resolve_category(self, category: str, city: str, top_n: int = 8) -> list[ResolvedPOI]:
+        """#1240 B-mode: expand a category keyword (咖啡店/酒馆/书店…) into the
+        top-N real POIs. Unlike resolve_one (one best match per name), every AMap
+        result becomes its own POI, then far-suburb outliers are trimmed so the
+        bbox stays in the main urban core."""
+        candidates = self.client.search_text(category, city=city)
+        resolved: list[ResolvedPOI] = []
+        for candidate in candidates:
+            lng_wgs84, lat_wgs84 = amap_to_wgs84(candidate.lng_gcj02, candidate.lat_gcj02)
+            resolved.append(
+                ResolvedPOI(
+                    input_name=candidate.name,
+                    resolved_name=candidate.name,
+                    source=self.source,
+                    poi_id=candidate.poi_id,
+                    address=candidate.address,
+                    province=candidate.province,
+                    city=candidate.city,
+                    district=candidate.district,
+                    type=candidate.type,
+                    typecode=candidate.typecode,
+                    lng_gcj02=candidate.lng_gcj02,
+                    lat_gcj02=candidate.lat_gcj02,
+                    lng_wgs84=lng_wgs84,
+                    lat_wgs84=lat_wgs84,
+                    confidence=1.0,
+                    status="resolved",
+                    needs_review=False,
+                    candidates=[],
+                )
+            )
+        return _keep_urban_core(resolved, top_n)
+
     def resolve_one(self, input_name: str, city: str, limit: int = 5) -> ResolvedPOI:
         candidates = self.client.search_text(input_name, city=city)
         ranked = sorted(
@@ -77,6 +110,21 @@ class POIResolver:
             "lng_gcj02": candidate.lng_gcj02,
             "lat_gcj02": candidate.lat_gcj02,
         }
+
+
+def _keep_urban_core(pois: list[ResolvedPOI], top_n: int) -> list[ResolvedPOI]:
+    """#1240: drop far-suburb outliers and cap at top_n. Ranks by distance to the
+    median center (robust to a lone far branch), so e.g. a single 都江堰 shop won't
+    stretch the map across the whole prefecture."""
+    valid = [p for p in pois if p.lat_wgs84 is not None and p.lng_wgs84 is not None]
+    if len(valid) <= top_n:
+        return valid
+    lats = sorted(p.lat_wgs84 for p in valid)
+    lngs = sorted(p.lng_wgs84 for p in valid)
+    center_lat = lats[len(valid) // 2]
+    center_lng = lngs[len(valid) // 2]
+    valid.sort(key=lambda p: (p.lat_wgs84 - center_lat) ** 2 + (p.lng_wgs84 - center_lng) ** 2)
+    return valid[:top_n]
 
 
 def _normalize(value: str) -> str:
